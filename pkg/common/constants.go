@@ -44,6 +44,11 @@ const (
 	VolumeTypePersistentVolumeClaim = "persistentVolumeClaim"
 )
 
+// Kubernetes memory types
+const (
+	MemoryTypeLimit = "limits.memory"
+)
+
 const (
 	// Epsilon is a small number used to compare 64 bit floating point numbers.
 	Epsilon = 1e-9

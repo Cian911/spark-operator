@@ -45,8 +45,10 @@ var javaStringSuffixes = map[string]int64{
 	"p":  1 << 50,
 }
 
-var javaStringPattern = regexp.MustCompile(`([0-9]+)([a-z]+)?`)
-var javaFractionStringPattern = regexp.MustCompile(`([0-9]+\.[0-9]+)([a-z]+)?`)
+var (
+	javaStringPattern         = regexp.MustCompile(`([0-9]+)([a-z]+)?`)
+	javaFractionStringPattern = regexp.MustCompile(`([0-9]+\.[0-9]+)([a-z]+)?`)
+)
 
 // getResourceList returns the resource requests of the given SparkApplication.
 func getResourceList(app *v1beta2.SparkApplication) (corev1.ResourceList, error) {
@@ -214,9 +216,59 @@ func getSparkPodMemoryRequests(podSpec *v1beta2.SparkPodSpec, memoryOverheadFact
 	return resourceList, nil
 }
 
-// For Spark pod, memory requests and limits are the same.
+// TODO: Reimplement this method with memoryLimit
 func getMemoryLimits(app *v1beta2.SparkApplication) (corev1.ResourceList, error) {
-	return getMemoryRequests(app)
+	// If memory overhead factor is set, use it. Otherwise, use the default value.
+	var memoryOverheadFactor float64
+	if app.Spec.MemoryOverheadFactor != nil {
+		parsed, err := strconv.ParseFloat(*app.Spec.MemoryOverheadFactor, 64)
+		if err != nil {
+			return nil, err
+		}
+		memoryOverheadFactor = parsed
+	} else if app.Spec.Type == v1beta2.SparkApplicationTypeJava {
+		memoryOverheadFactor = common.DefaultJVMMemoryOverheadFactor
+	} else {
+		memoryOverheadFactor = common.DefaultNonJVMMemoryOverheadFactor
+	}
+
+	// Calculate driver pod memory requests.
+	driverResourceList, err := getSparkPodMemoryRequests(&app.Spec.Driver.SparkPodSpec, memoryOverheadFactor, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate executor pod memory requests.
+	var replicas int64 = 1
+	if app.Spec.Executor.Instances != nil {
+		replicas = int64(*app.Spec.Executor.Instances)
+	}
+	executorResourceList, err := getSparkPodMemoryRequests(&app.Spec.Executor.SparkPodSpec, memoryOverheadFactor, replicas)
+	if err != nil {
+		return nil, err
+	}
+
+	return util.SumResourceList([]corev1.ResourceList{driverResourceList, executorResourceList}), nil
+	// return getMemoryRequests(app)
+}
+
+func getSparkPodMemoryLimits(podSpec *v1beta2.SparkPodSpec, replicas int64) (corev1.ResourceList, error) {
+	var memoryLimitBytes int64
+
+	if podSpec.MemoryLimit != nil {
+		parsed, err := parseJavaMemoryString(*podSpec.MemoryLimit)
+		if err != nil {
+			return nil, err
+		}
+		memoryLimitBytes = parsed
+	}
+
+	resourceList := corev1.ResourceList{
+		corev1.ResourceMemory:         *resource.NewQuantity(memoryLimitBytes*replicas, resource.BinarySI),
+		corev1.ResourceRequestsMemory: *resource.NewQuantity(memoryLimitBytes*replicas, resource.BinarySI),
+	}
+
+	return resourceList, nil
 }
 
 // Logic copied from https://github.com/apache/spark/blob/5264164a67df498b73facae207eda12ee133be7d/common/network-common/src/main/java/org/apache/spark/network/util/JavaUtils.java#L276
