@@ -211,9 +211,14 @@ func imageOption(app *v1beta2.SparkApplication) ([]string, error) {
 	}
 
 	if app.Spec.ImagePullPolicy != nil && *app.Spec.ImagePullPolicy != "" {
-		args = append(args,
+		args = append(
+			args,
 			"--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesContainerImagePullPolicy, *app.Spec.ImagePullPolicy),
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesContainerImagePullPolicy,
+				*app.Spec.ImagePullPolicy,
+			),
 		)
 	}
 
@@ -245,7 +250,11 @@ func memoryOverheadFactorOption(app *v1beta2.SparkApplication) ([]string, error)
 	}
 	args := []string{
 		"--conf",
-		fmt.Sprintf("%s=%s", common.SparkKubernetesMemoryOverheadFactor, *app.Spec.MemoryOverheadFactor),
+		fmt.Sprintf(
+			"%s=%s",
+			common.SparkKubernetesMemoryOverheadFactor,
+			*app.Spec.MemoryOverheadFactor,
+		),
 	}
 	return args, nil
 }
@@ -302,12 +311,19 @@ func driverConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	property = fmt.Sprintf(common.SparkKubernetesDriverLabelTemplate, common.LabelSparkAppName)
 	args = append(args, "--conf", fmt.Sprintf("%s=%s", property, app.Name))
 
-	property = fmt.Sprintf(common.SparkKubernetesDriverLabelTemplate, common.LabelLaunchedBySparkOperator)
+	property = fmt.Sprintf(
+		common.SparkKubernetesDriverLabelTemplate,
+		common.LabelLaunchedBySparkOperator,
+	)
 	args = append(args, "--conf", fmt.Sprintf("%s=%s", property, "true"))
 
 	// If Spark version is less than 3.0.0 or driver pod template is not defined, then the driver pod needs to be mutated by the webhook.
-	if util.CompareSemanticVersion(app.Spec.SparkVersion, "3.0.0") < 0 || app.Spec.Driver.Template == nil {
-		property = fmt.Sprintf(common.SparkKubernetesDriverLabelTemplate, common.LabelMutatedBySparkOperator)
+	if util.CompareSemanticVersion(app.Spec.SparkVersion, "3.0.0") < 0 ||
+		app.Spec.Driver.Template == nil {
+		property = fmt.Sprintf(
+			common.SparkKubernetesDriverLabelTemplate,
+			common.LabelMutatedBySparkOperator,
+		)
 		args = append(args, "--conf", fmt.Sprintf("%s=%s", property, "true"))
 	}
 
@@ -315,8 +331,15 @@ func driverConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	args = append(args, "--conf", fmt.Sprintf("%s=%s", property, app.Status.SubmissionID))
 
 	if app.Spec.Driver.Image != nil && *app.Spec.Driver.Image != "" {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesDriverContainerImage, *app.Spec.Driver.Image))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesDriverContainerImage,
+				*app.Spec.Driver.Image,
+			),
+		)
 	} else if app.Spec.Image != nil && *app.Spec.Image != "" {
 		args = append(args, "--conf",
 			fmt.Sprintf("%s=%s", common.SparkKubernetesDriverContainerImage, *app.Spec.Image))
@@ -330,13 +353,27 @@ func driverConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	}
 
 	if app.Spec.Driver.CoreRequest != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesDriverRequestCores, *app.Spec.Driver.CoreRequest))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesDriverRequestCores,
+				*app.Spec.Driver.CoreRequest,
+			),
+		)
 	}
 
 	if app.Spec.Driver.CoreLimit != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesDriverLimitCores, *app.Spec.Driver.CoreLimit))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesDriverLimitCores,
+				*app.Spec.Driver.CoreLimit,
+			),
+		)
 	}
 
 	if app.Spec.Driver.Memory != nil {
@@ -351,8 +388,11 @@ func driverConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 
 	if app.Spec.Driver.ServiceAccount != nil {
 		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s",
-				common.SparkKubernetesAuthenticateDriverServiceAccountName, *app.Spec.Driver.ServiceAccount),
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesAuthenticateDriverServiceAccountName,
+				*app.Spec.Driver.ServiceAccount,
+			),
 		)
 	}
 
@@ -362,8 +402,15 @@ func driverConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	}
 
 	if app.Spec.Driver.KubernetesMaster != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesDriverMaster, *app.Spec.Driver.KubernetesMaster))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesDriverMaster,
+				*app.Spec.Driver.KubernetesMaster,
+			),
+		)
 	}
 
 	// Populate SparkApplication labels to driver pod
@@ -407,8 +454,15 @@ func driverSecretOption(app *v1beta2.SparkApplication) ([]string, error) {
 		property := fmt.Sprintf(common.SparkKubernetesDriverSecretsTemplate, secret.Name)
 		args = append(args, "--conf", fmt.Sprintf("%s=%s", property, secret.Path))
 		if secret.Type == v1beta2.SecretTypeGCPServiceAccount {
-			property := fmt.Sprintf(common.SparkKubernetesDriverEnvTemplate, common.EnvGoogleApplicationCredentials)
-			conf := fmt.Sprintf("%s=%s", property, filepath.Join(secret.Path, common.ServiceAccountJSONKeyFileName))
+			property := fmt.Sprintf(
+				common.SparkKubernetesDriverEnvTemplate,
+				common.EnvGoogleApplicationCredentials,
+			)
+			conf := fmt.Sprintf(
+				"%s=%s",
+				property,
+				filepath.Join(secret.Path, common.ServiceAccountJSONKeyFileName),
+			)
 			args = append(args, "--conf", conf)
 		} else if secret.Type == v1beta2.SecretTypeHadoopDelegationToken {
 			property := fmt.Sprintf(common.SparkKubernetesDriverEnvTemplate, common.EnvHadoopTokenFileLocation)
@@ -653,12 +707,19 @@ func executorConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	property = fmt.Sprintf(common.SparkKubernetesExecutorLabelTemplate, common.LabelSparkAppName)
 	args = append(args, "--conf", fmt.Sprintf("%s=%s", property, app.Name))
 
-	property = fmt.Sprintf(common.SparkKubernetesExecutorLabelTemplate, common.LabelLaunchedBySparkOperator)
+	property = fmt.Sprintf(
+		common.SparkKubernetesExecutorLabelTemplate,
+		common.LabelLaunchedBySparkOperator,
+	)
 	args = append(args, "--conf", fmt.Sprintf("%s=%s", property, "true"))
 
 	// If Spark version is less than 3.0.0 or executor pod template is not defined, then the executor pods need to be mutated by the webhook.
-	if util.CompareSemanticVersion(app.Spec.SparkVersion, "3.0.0") < 0 || app.Spec.Executor.Template == nil {
-		property = fmt.Sprintf(common.SparkKubernetesExecutorLabelTemplate, common.LabelMutatedBySparkOperator)
+	if util.CompareSemanticVersion(app.Spec.SparkVersion, "3.0.0") < 0 ||
+		app.Spec.Executor.Template == nil {
+		property = fmt.Sprintf(
+			common.SparkKubernetesExecutorLabelTemplate,
+			common.LabelMutatedBySparkOperator,
+		)
 		args = append(args, "--conf", fmt.Sprintf("%s=%s", property, "true"))
 	}
 
@@ -671,8 +732,15 @@ func executorConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	}
 
 	if app.Spec.Executor.Image != nil && *app.Spec.Executor.Image != "" {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorContainerImage, *app.Spec.Executor.Image))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesExecutorContainerImage,
+				*app.Spec.Executor.Image,
+			),
+		)
 	} else if app.Spec.Image != nil && *app.Spec.Image != "" {
 		args = append(args, "--conf",
 			fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorContainerImage, *app.Spec.Image))
@@ -686,30 +754,65 @@ func executorConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 			fmt.Sprintf("%s=%d", common.SparkExecutorCores, *app.Spec.Executor.Cores))
 	}
 	if app.Spec.Executor.CoreRequest != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorRequestCores, *app.Spec.Executor.CoreRequest))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesExecutorRequestCores,
+				*app.Spec.Executor.CoreRequest,
+			),
+		)
 	}
 	if app.Spec.Executor.CoreLimit != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorLimitCores, *app.Spec.Executor.CoreLimit))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesExecutorLimitCores,
+				*app.Spec.Executor.CoreLimit,
+			),
+		)
 	}
 	if app.Spec.Executor.Memory != nil {
 		args = append(args, "--conf",
 			fmt.Sprintf("%s=%s", common.SparkExecutorMemory, *app.Spec.Executor.Memory))
 	}
 	if app.Spec.Executor.MemoryOverhead != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkExecutorMemoryOverhead, *app.Spec.Executor.MemoryOverhead))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkExecutorMemoryOverhead,
+				*app.Spec.Executor.MemoryOverhead,
+			),
+		)
 	}
 
 	if app.Spec.Executor.ServiceAccount != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%s", common.SparkKubernetesAuthenticateExecutorServiceAccountName, *app.Spec.Executor.ServiceAccount))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkKubernetesAuthenticateExecutorServiceAccountName,
+				*app.Spec.Executor.ServiceAccount,
+			),
+		)
 	}
 
 	if app.Spec.Executor.DeleteOnTermination != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%t", common.SparkKubernetesExecutorDeleteOnTermination, *app.Spec.Executor.DeleteOnTermination))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%t",
+				common.SparkKubernetesExecutorDeleteOnTermination,
+				*app.Spec.Executor.DeleteOnTermination,
+			),
+		)
 	}
 
 	// Populate SparkApplication labels to executor pod
@@ -733,7 +836,15 @@ func executorConfOption(app *v1beta2.SparkApplication) ([]string, error) {
 	}
 
 	if app.Spec.Executor.JavaOptions != nil {
-		args = append(args, "--conf", fmt.Sprintf("%s=%s", common.SparkExecutorExtraJavaOptions, *app.Spec.Executor.JavaOptions))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%s",
+				common.SparkExecutorExtraJavaOptions,
+				*app.Spec.Executor.JavaOptions,
+			),
+		)
 	}
 
 	return args, nil
@@ -746,11 +857,17 @@ func executorSecretOption(app *v1beta2.SparkApplication) ([]string, error) {
 		args = append(args, "--conf", fmt.Sprintf("%s=%s", property, secret.Path))
 		switch secret.Type {
 		case v1beta2.SecretTypeGCPServiceAccount:
-			property := fmt.Sprintf(common.SparkKubernetesDriverEnvTemplate, common.EnvGoogleApplicationCredentials)
+			property := fmt.Sprintf(
+				common.SparkKubernetesDriverEnvTemplate,
+				common.EnvGoogleApplicationCredentials,
+			)
 			args = append(args, "--conf", fmt.Sprintf("%s=%s", property,
 				filepath.Join(secret.Path, common.ServiceAccountJSONKeyFileName)))
 		case v1beta2.SecretTypeHadoopDelegationToken:
-			property := fmt.Sprintf(common.SparkKubernetesDriverEnvTemplate, common.EnvHadoopTokenFileLocation)
+			property := fmt.Sprintf(
+				common.SparkKubernetesDriverEnvTemplate,
+				common.EnvHadoopTokenFileLocation,
+			)
 			args = append(args, "--conf", fmt.Sprintf("%s=%s", property,
 				filepath.Join(secret.Path, common.HadoopDelegationTokenFileName)))
 		}
@@ -840,20 +957,22 @@ func executorVolumeMountsOption(app *v1beta2.SparkApplication) ([]string, error)
 		}
 		switch volumeType {
 		case common.VolumeTypeEmptyDir:
-			args = append(
-				args,
-				"--conf",
-				fmt.Sprintf(
-					"%s=%s",
+			if volume.EmptyDir.SizeLimit != nil {
+				args = append(
+					args,
+					"--conf",
 					fmt.Sprintf(
-						common.SparkKubernetesExecutorVolumesOptionsTemplate,
-						common.VolumeTypeEmptyDir,
-						volume.Name,
-						"sizeLimit",
+						"%s=%s",
+						fmt.Sprintf(
+							common.SparkKubernetesExecutorVolumesOptionsTemplate,
+							common.VolumeTypeEmptyDir,
+							volume.Name,
+							"sizeLimit",
+						),
+						volume.EmptyDir.SizeLimit.String(),
 					),
-					volume.EmptyDir.SizeLimit.String(),
-				),
-			)
+				)
+			}
 		case common.VolumeTypeHostPath:
 			args = append(
 				args,
@@ -996,20 +1115,48 @@ func dynamicAllocationOption(app *v1beta2.SparkApplication) ([]string, error) {
 		fmt.Sprintf("%s=true", common.SparkDynamicAllocationShuffleTrackingEnabled))
 
 	if dynamicAllocation.InitialExecutors != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%d", common.SparkDynamicAllocationInitialExecutors, *dynamicAllocation.InitialExecutors))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%d",
+				common.SparkDynamicAllocationInitialExecutors,
+				*dynamicAllocation.InitialExecutors,
+			),
+		)
 	}
 	if dynamicAllocation.MinExecutors != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%d", common.SparkDynamicAllocationMinExecutors, *dynamicAllocation.MinExecutors))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%d",
+				common.SparkDynamicAllocationMinExecutors,
+				*dynamicAllocation.MinExecutors,
+			),
+		)
 	}
 	if dynamicAllocation.MaxExecutors != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%d", common.SparkDynamicAllocationMaxExecutors, *dynamicAllocation.MaxExecutors))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%d",
+				common.SparkDynamicAllocationMaxExecutors,
+				*dynamicAllocation.MaxExecutors,
+			),
+		)
 	}
 	if dynamicAllocation.ShuffleTrackingTimeout != nil {
-		args = append(args, "--conf",
-			fmt.Sprintf("%s=%d", common.SparkDynamicAllocationShuffleTrackingTimeout, *dynamicAllocation.ShuffleTrackingTimeout))
+		args = append(
+			args,
+			"--conf",
+			fmt.Sprintf(
+				"%s=%d",
+				common.SparkDynamicAllocationShuffleTrackingTimeout,
+				*dynamicAllocation.ShuffleTrackingTimeout,
+			),
+		)
 	}
 
 	return args, nil
@@ -1045,17 +1192,25 @@ func driverPodTemplateOption(app *v1beta2.SparkApplication) ([]string, error) {
 		return []string{}, nil
 	}
 
-	podTemplateFile := fmt.Sprintf("/tmp/spark/%s/driver-pod-template.yaml", app.Status.SubmissionID)
+	podTemplateFile := fmt.Sprintf(
+		"/tmp/spark/%s/driver-pod-template.yaml",
+		app.Status.SubmissionID,
+	)
 	if err := util.WriteObjectToFile(app.Spec.Driver.Template, podTemplateFile); err != nil {
 		return []string{}, err
 	}
-	logger.V(1).Info("Created driver pod template file for SparkApplication", "name", app.Name, "namespace", app.Namespace, "file", podTemplateFile)
+	logger.V(1).
+		Info("Created driver pod template file for SparkApplication", "name", app.Name, "namespace", app.Namespace, "file", podTemplateFile)
 
 	args := []string{
 		"--conf",
 		fmt.Sprintf("%s=%s", common.SparkKubernetesDriverPodTemplateFile, podTemplateFile),
 		"--conf",
-		fmt.Sprintf("%s=%s", common.SparkKubernetesDriverPodTemplateContainerName, common.SparkDriverContainerName),
+		fmt.Sprintf(
+			"%s=%s",
+			common.SparkKubernetesDriverPodTemplateContainerName,
+			common.SparkDriverContainerName,
+		),
 	}
 	return args, nil
 }
@@ -1066,17 +1221,25 @@ func executorPodTemplateOption(app *v1beta2.SparkApplication) ([]string, error) 
 		return []string{}, nil
 	}
 
-	podTemplateFile := fmt.Sprintf("/tmp/spark/%s/executor-pod-template.yaml", app.Status.SubmissionID)
+	podTemplateFile := fmt.Sprintf(
+		"/tmp/spark/%s/executor-pod-template.yaml",
+		app.Status.SubmissionID,
+	)
 	if err := util.WriteObjectToFile(app.Spec.Executor.Template, podTemplateFile); err != nil {
 		return []string{}, err
 	}
-	logger.V(1).Info("Created executor pod template file for SparkApplication", "name", app.Name, "namespace", app.Namespace, "file", podTemplateFile)
+	logger.V(1).
+		Info("Created executor pod template file for SparkApplication", "name", app.Name, "namespace", app.Namespace, "file", podTemplateFile)
 
 	args := []string{
 		"--conf",
 		fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorPodTemplateFile, podTemplateFile),
 		"--conf",
-		fmt.Sprintf("%s=%s", common.SparkKubernetesExecutorPodTemplateContainerName, common.Spark3DefaultExecutorContainerName),
+		fmt.Sprintf(
+			"%s=%s",
+			common.SparkKubernetesExecutorPodTemplateContainerName,
+			common.Spark3DefaultExecutorContainerName,
+		),
 	}
 	return args, nil
 }
